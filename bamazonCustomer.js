@@ -50,7 +50,7 @@ function askCustomer() {
             name: "quantity",
         }
     ]).then(function (res) {
-       handleTransaction (res.id, res.quantity)
+        handleTransaction(res.id, res.quantity)
     })
 }
 
@@ -66,26 +66,44 @@ function handleTransaction(id, quantity) {
             if (productObject.stock_quantity <= 0) {
                 console.log(`We're completely out of ${productObject.product_name}.`)
             }
-        }
-        // if the if statement did not run we can assume we have enough of the product in stock to fill the order.
-        var updatedStockQuantity = productObject.stock_quantity - quantity;
-        var productId = productObject.item_id;
-        var query = "UPDATE products SET ? WHERE ?";
+            askForAnotherTransaction()
+        } else {
+            var updatedStockQuantity = productObject.stock_quantity - quantity;
+            var productId = productObject.item_id;
+            var query = "UPDATE products SET ? WHERE ?";
 
-        connection.query(query, [{stock_quantity: updatedStockQuantity},{item_id: productId}],function(err,res,fields){
-            if (err) {
-                throw err
-            }
-            console.clear()
-            console.log(`
-            _
-            ------------------------------------------receipt-----------------------------------
-                    product name: ${productObject.product_name}
-                    product id: ${productObject.item_id}
-                    price: ${productObject.price}
-                    quantity bought: ${quantity}
-                        total: ${productObject.price * quantity}
-            `)
-        })
+            connection.query(query, [{ stock_quantity: updatedStockQuantity }, { item_id: productId }], function (err, res, fields) {
+                if (err) {
+                    throw err
+                }
+                console.log(`
+                _
+                ------------------------------------------receipt-----------------------------------
+                        product name: ${productObject.product_name}
+                        product id: ${productObject.item_id}
+                        price: ${productObject.price}
+                        quantity bought: ${quantity}
+                            total: ${productObject.price * quantity} 
+                `)
+                askForAnotherTransaction()
+            })
+            
+        }
+    })
+}
+
+function askForAnotherTransaction (){
+    inquirer.prompt([
+        {
+            message: "Would you like to make another purchase",
+            name: "makePurchase",
+        },
+
+    ]).then(function (res) {
+       if (res.makePurchase === "yes"){
+           showProducts()
+       }else (
+           process.exit (1)
+       )
     })
 }
